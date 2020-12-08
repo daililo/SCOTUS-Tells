@@ -68,7 +68,7 @@ ui <- fluidPage(theme = shinytheme("cosmo"), navbarPage(
     
     mainPanel(
       
-      plotOutput("model1")
+      gt_output("model1")
       
     )
   ),

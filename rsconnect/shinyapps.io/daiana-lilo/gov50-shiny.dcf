@@ -1,0 +1,12 @@
+name: gov50-shiny
+title: gov50-shiny
+username:
+account: daiana-lilo
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3371090
+bundleId: 3959218
+url: https://daiana-lilo.shinyapps.io/gov50-shiny/
+when: 1607416450.63757
+asMultiple: FALSE
+asStatic: FALSE
