@@ -24,23 +24,40 @@ set.seed(10)
 
 t_prior <- student_t(df = 7, location = 0, scale = 2.5)
 
-model_1 <- stan_glm(petitioner_vote ~ pitch_diff + unpleasantDiff_totalWords + 
+# Priors are needed when creating Baynesian logistic regression models, with 
+# scaling.
+
+model_1 <- stan_glm(petitioner_vote ~ unpleasantDiff_totalWords + 
                     justiceName, 
                     data = all_cases,
                     family = binomial(link = "logit"), 
                     prior = t_prior, prior_intercept = t_prior, QR=TRUE,
                     refresh = 0)
 
+# Basing whether a Justice voted on a petitioner or not based on their 
+# use of words with negative connotations.
+
+# Using the data set that I created from the previous r code chunks
+
+# Incorporating my prior.
+
 model_1 %>%
   
   tbl_regression()  %>%
   
+  # Wanted to incorporate in shiny using a table.
+  
   as_gt() %>%
   
-  tab_header(title = "Regression of Pitch Difference on Petioner Vote",
+  tab_header(title = "Regression of Language Difference on Petioner Vote",
              subtitle = "Per Each Justice") %>%
   
-  tab_source_note("Source: enos_sen_justices.csv")
+  tab_source_note("Source: black-johnson.csv")
+
+
+#pplot <- plot(model_1, "areas", prob = 0.95, prob_outer = 1) +
+ # xlim(c(-2.5, 2.5))
+#pplot + geom_vline(xintercept = 0)
 
 
 ```
@@ -52,17 +69,62 @@ set.seed(10)
 
 t_prior2 <- student_t(df = 7, location = 0, scale = 2.5)
 
-model_2 <- stan_glm(petitioner_vote ~ unpleasantDiff_totalWords * justiceName, 
+# Same format as the model above.
+
+model_2 <- stan_glm(petitioner_vote ~ pitch_diff + justiceName, 
                     data = all_cases,
                     family = binomial(link = "logit"), 
                     prior = t_prior2, prior_intercept = t_prior2, QR=TRUE,
                     refresh = 0)
 
-model_2
+# Basing whether a Justice voted on a petitioner or not based on their 
+# pitch difference.
+
+# Using the data set that I created from the previous r code chunks
+
+# Incorporating my prior.
+
+model_2 %>%
+  
+  tbl_regression()  %>%
+  
+  as_gt() %>%
+  
+  tab_header(title = "Regression of Pitch Difference on Petioner Vote",
+             subtitle = "Per Each Justice") %>%
+  
+  tab_source_note("Source: enos_sen_justices.csv")
 
 ```
 
 
+```{r}
+
+
+# Still considering whether to incoporate this model.
+
+set.seed(10)
+
+t_prior3 <- student_t(df = 7, location = 0, scale = 2.5)
+
+model_3 <- stan_glm(petitioner_vote ~ jquest_p + justiceName - 1, 
+                    data = all_cases,
+                    family = binomial(link = "logit"), 
+                    prior = t_prior3, prior_intercept = t_prior3, QR=TRUE,
+                    refresh = 0)
+
+model_3 %>%
+  
+  tbl_regression()  %>%
+  
+  as_gt() %>%
+  
+  tab_header(title = "Regression of Pitch Difference on Petioner Vote",
+             subtitle = "Per Each Justice") %>%
+  
+  tab_source_note("Source: enos_sen_justices.csv")
+
+```
 
 
 

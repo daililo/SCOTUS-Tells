@@ -35,7 +35,7 @@ ui <- fluidPage(theme = shinytheme("cosmo"), navbarPage(
    in their final decision. Finally, the last study finds evidence that 
    Justices are more prone to question the lawyer who they are more likely to 
    disagree with in an oral argument than one who they are likely to eventually 
-   vote in agreement with."),
+   vote in agreement with. My study uses cases from the years 2004 to 2008."),
   
   p("All of these three tells are succesful in predicting the probability 
    of how a Justice will vote on their own. Yet I believe that these three 
@@ -49,16 +49,59 @@ ui <- fluidPage(theme = shinytheme("cosmo"), navbarPage(
    or all three. If we find these tells in a Justice's interaction during the 
    oral argument stage, we will be able to predict their vote before they make 
    it.")),
+  
+  # Discussion incorporated because I wanted to bring in previous written 
+  # studies on my project in case the reader wanted more information.
 
 
   tabPanel(
     "Plots",
+    h3("Looking at Tells Individually"),
+    sidebarPanel(
+      selectInput("tell_type","Tell",
+                  c("Pitch", "Language", "Questions")
+      ),
+      
+      # This panel is used to choose which plot one wants to visualize, with
+      # each tell having its own plot.
+    
+    p("Through this first graph, we are able to visualize how pitch differs
+      greatly among individual Justices. Through the usage of existing machine
+      learning technology, Justice's have been shown to change the tone of 
+      their voice when speaking to a petitioner they agree or disagree with.
+      The higher their voice gets, the more they disagree with a petitioner.
+      For example, we see Justice Rehnquist having a lower pitch and agreeing 
+      with petioners more from the years 2004 to 2008. We see a similar trend
+      for Justice Scalia. What is interesting is that we see nothing for 
+      Justice Thomas, who is known to barely ever speak in oral arguments, 
+      therefore unable to generate enough data. However, we do know that Thomas
+      is the most conservative leaning Justice on the Court, making his vote 
+      easier to predict."),
+    
+    br(),    
+    
+    # Super cool function to space out my paragraphs!
+    
+    p("Language usage shows us which Justices rely most on using words with
+      negative connotations to show their disapproval in the petitioner. 
+      Interestingly, we see that Rehnquist favors this tell, and uses language
+      with a negative connotation frequently when in disagreement. The 
+      variability in the graph shows that such difference in word usage exists
+      and used when speaking to the petitioner. Again, we see no data for 
+      Justice Thomas, due to the fact he simply just doesn't speak."),
+    
+    br(),    
+    
+    p("The final graph shows the variability of questions that each Justice
+      asks to either the petitioner or respondent, showing that this really
+      does differ significantly depending on whether or not the Justice agrees
+      with their line of reasoning or not.")),
     
     mainPanel(
 
-      plotOutput("vocalpitch"),
-      plotOutput("UnpWords"),
-      plotOutput("questions"),
+      plotOutput("Plots")
+      
+      # One plot will display per choice.
       
     )
   ),
@@ -66,9 +109,43 @@ ui <- fluidPage(theme = shinytheme("cosmo"), navbarPage(
   tabPanel(
     "Models",
     
+    h3("Looking at Models"),
+    sidebarPanel(
+      selectInput("model_type","Model",
+                  c("Pitch", "Language")
+      ),
+      
+      # Similar to the plots, this lets a viewer choose one of the plots.
+      
+      p("This first model shows the change in petitioner vote based on a 
+        Justice's pitch. This is a Baynesian Logistic regression model, 
+        meaning that the Justice's vote was coded as either a 1 or 0 (1
+        indicating that the Justice did vote for the petitioner and 0 
+        meaninf that they voted for the respondent). My beta_1, pitch,
+        indicates that a lower pitch resulted in more petitioner votes, which
+        is exactly what was expected to occur. A lower pitch indicates more of
+        an agreement. For each individual Justice we see that the had a lower
+        pitch when they voted for the petitioner. Even those who had a pitch 
+        above 0, their normal range, it was not that significantly above it.
+        Again, we see Thomas being the outlier. We also see that Justices 
+        Souter, Stevens, Ginsburg, and Breyer were most reliant in speech as
+        their tell, while Rehnquist was the least."),
+      
+      br(),    
+      
+      p("We see very similar results when looking at the usage of unpleasant
+        words. Justices who have negative values are less likely to use 
+        words with negative connotations when voting for the petitioner. The 
+        values of this model are very similar to the model depicting pitch
+        difference, showing that Justices are likely to indicate both tells
+        when questioning during the oral argument stage.")),
+    
     mainPanel(
       
       gt_output("model1")
+      
+      # Was not using gt_output before and was wondering why I was getting an
+      # error!
       
     )
   ),
@@ -100,6 +177,7 @@ ui <- fluidPage(theme = shinytheme("cosmo"), navbarPage(
             -  Epstein, L., Landes, W. M., & Posner, R. A. (2009). 
             Inferring the Winning Party in the Supreme Court from the Pattern 
             of Questioning at Oral Argument. SSRN Electronic Journal."),
+          
           p("Check out my code", 
             a("here",
               href = "https://github.com/daililo/gov50-shiny")),
@@ -129,8 +207,14 @@ ui <- fluidPage(theme = shinytheme("cosmo"), navbarPage(
 
 server <- function(input, output, session) {
 
+  # Created the plots below using if else statements in order to get the 
+  # desired plot to correspond with the correct panel choice.
   
-  output$vocalpitch <- renderPlot({
+  # Interesting that I never liked using if else statements and am now
+  # incorporating them into my final project.
+  
+  output$Plots <- renderPlot({
+    if(input$tell_type == "Pitch") {
     all_cases %>%
       ggplot(aes(x = pitch_diff, y = justiceName, fill = justiceName)) +
       geom_density_ridges(bandwidth = .214) +
@@ -143,8 +227,49 @@ server <- function(input, output, session) {
 Petitioner of a Case",
            x = "Pitch Difference",
            y = "Justice Name",
-           caption = "Source = enos_sen_justices.csv")
+           caption = "Source = enos_sen_justices.csv") }
 
+    
+    else if(input$tell_type == "Language") {
+      all_cases %>%
+        ggplot(aes(x = unpleasantDiff_totalWords, y = justiceName,
+                   fill = justiceName)) +
+        geom_density_ridges(bandwidth = .772) +
+        xlim(c(-5, 5)) +
+        scale_fill_viridis(option = "cividis", discrete = TRUE) +
+        geom_vline(xintercept = 0) +
+        theme_classic() +
+        theme(legend.position = "none") +
+        labs(title = "Connotation of Word Choice for Each Justice",
+             x = "Unpleasant Word Usage",
+             y = "Justice Name",
+             caption = "Source = black-johnson.csv") }
+  
+    
+    else if(input$tell_type == "Questions") {
+      all_cases %>%
+        select(justiceName, jquest_r, jquest_p) %>%
+        pivot_longer(cols = jquest_r:jquest_p, 
+                     names_to = "jquest",
+                     values_to = "Questions") %>%
+        ggplot(aes(x = Questions, y = justiceName, fill = jquest)) +
+        geom_density_ridges(bandwidth = 30, alpha = .5) +
+        facet_wrap(~ jquest) +
+        theme_classic() +
+        scale_fill_manual(values = c("red", "blue"),
+                          labels = c("Questions to Petioner", 
+                                     "Questions to Respondent"),
+                          name = "Questions") +
+        scale_x_continuous(labels = c("0", "10", "20", 
+                                      "30", "40", "50",
+                                      "60", "70", "80", "90",
+                                      "100"),
+                           breaks = seq(0, 100, 10),
+                           limits = c(0, 100)) +
+        labs(title = "Questions to the Petitioner vs. Respondent",
+             x = "Number of Questions",
+             y = "Justice Name",
+             caption = "Source = epstein.csv") }
     
   })
   
@@ -188,31 +313,62 @@ Petitioner of a Case",
       labs(title = "Questions to the Petitioner vs. Respondent",
            x = "Number of Questions",
            y = "Justice Name",
-           caption = "Source = epstein.csv")
+           caption = "Source = epstein.csv") 
     
   })
   
+  # Similar to use and function of if else statements as above
+  
   output$model1 <- render_gt({
     
-    set.seed(10)
+    if(input$model_type == "Pitch") {
+      
+      set.seed(10)
+      
+      t_prior2 <- student_t(df = 7, location = 0, scale = 2.5)
+      
+      model_2 <- stan_glm(petitioner_vote ~ pitch_diff + justiceName, 
+                          data = all_cases,
+                          family = binomial(link = "logit"), 
+                          prior = t_prior2, prior_intercept = t_prior2, QR=TRUE,
+                          refresh = 0)
+      
+      model_2 %>%
+        
+        tbl_regression()  %>%
+        
+        as_gt() %>%
+        
+        tab_header(title = "Regression of Pitch Difference on Petioner Vote",
+                   subtitle = "Per Each Justice") %>%
+        
+        tab_source_note("Source: enos_sen_justices.csv") }
     
-    t_prior <- student_t(df = 7, location = 0, scale = 2.5)
     
-    model_1 <- stan_glm(petitioner_vote ~ pitch_diff + 
-                        unpleasantDiff_totalWords + justiceName, 
-                        data = all_cases,
-                        family = binomial(link = "logit"), 
-                        prior = t_prior, prior_intercept = t_prior, QR=TRUE,
-                        refresh = 0) 
+    else if(input$model_type == "Language") {
       
-      tbl_regression(model_1, intercept = TRUE)  %>%
+      set.seed(10)
       
-      as_gt() %>%
+      t_prior <- student_t(df = 7, location = 0, scale = 2.5)
       
-      tab_header(title = "Regression of Pitch Difference on Petioner Vote",
-                 subtitle = "Per Each Justice") %>%
+      model_1 <- stan_glm(petitioner_vote ~ unpleasantDiff_totalWords + 
+                            justiceName, 
+                          data = all_cases,
+                          family = binomial(link = "logit"), 
+                          prior = t_prior, prior_intercept = t_prior, QR=TRUE,
+                          refresh = 0)
       
-      tab_source_note("Source: enos_sen_justices.csv")
+      model_1 %>%
+        
+        tbl_regression()  %>%
+        
+        as_gt() %>%
+        
+        tab_header(title = "Regression of Language Difference on Petioner Vote",
+                   subtitle = "Per Each Justice") %>%
+        
+        tab_source_note("Source: black-johnson.csv") }
+    
   
   })
   
