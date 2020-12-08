@@ -191,7 +191,7 @@ Petitioner of a Case",
            caption = "Source = epstein.csv")
     
   })
-    
+  
   output$model1 <- render_gt({
     
     set.seed(10)
