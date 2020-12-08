@@ -1,150 +1,81 @@
-library(shiny) # you may need to install.packages() this
+
+library(shiny) 
 library(tidyverse)
+library(rstanarm)
+library(ggridges)
+library(patchwork)
+library(viridis)
+library(gtsummary)
+library(gt)
+library(shinythemes)
+library(broom.mixed)
 
-library(shiny)
-library(fec16)
+all_cases <- read_csv("all_cases/all_cases.csv")
 
+# Instead of including all of my data sets on the shiny app I just brought in
+# the one that I made.
 
-# These are the datasets I will be using
-blackjohnson <- read_csv("blackjohnsondata/black-johnson.csv")
-enos <- read_csv("enosdata/enos_sen_justices.csv")
-epstein <- read_csv("Epsteindata/epstein.csv")
-
-
-######################################################################################
-######################################################################################
-#
-# 1. Shiny Apps have two basic parts to them
-#
-#   - The user interface (UI) defines how the app should look.
-#
-#     -- For example, the text on the page, the placement of the elements, etc.
-#
-#   - The server defines how the app should behave.
-#
-#     -- This is how live elements are updated - like selecting a state from a list.
-#
-#   - Those two pieces are combined by running shinyApp(ui, server) to create the app.
-#
-#      -- You can also click the green "Run App" button on the top right or
-#         run runApp() in the console
-
-ui <- fluidPage(navbarPage(
-  "Shiny Example",
+ui <- fluidPage(theme = shinytheme("cosmo"), navbarPage(
+  "Analyzing the Emotional and Psychological “Tells” of a Supreme Court 
+  Justice",
   
   tabPanel("Discussion",
-           p("I used three different datasets in completing my analysis, each 
-             containing an independent study on a particular tell. The first one 
-            looks at emotional arousal in Justices. It is proven that the vocal 
-             pitch and tone of a Justice rises when they hear something displeasing 
-             in oral argument. By analyzing vocal pitch alone, one can accurately 
-             predict approximately 57.50% of a Justice’s vote on average, and correctly 
-             predict the outcomes of 66.55% overall cases. Next, another study focuses on 
-             the emotional importance of subconscious word choice used by Justices in 
-             oral argument. The use of “unpleasant” words towards one of the lawyers 
-             in question will likely indicate that the attorney will be the one representing 
-             the side of the case which will not be supported by the Justice in their 
-             final decision. Finally, the last study finds evidence that Justices are 
-             more prone to question the lawyer who they are more likely to disagree with 
-             in an oral argument than one who they are likely to eventually vote in agreement 
-             with. \nAll of these three tells are succesful in predicting the probability 
-             of how a Justice will vote on their own. Yet I believe that these three tells 
-             should be looked at together, not individually. I believe that more than 
-             one of the tells will be successfully observed in a given Justice's behavior. 
-             For example, if we have a case which shows Justice Scalia raising his pitch 
-             at a petitioner, questioning the petitioner more, and using language considered
-             negative towards the petitoner, than we have a higher probability of predicting 
-             Scalia's vote during the oral argument stage alone. I believe that these tells
-             do not show up indviidually, but instead in pairs or all three. If we find these
-             tells in a Justice's interaction during the oral argument stage, we will be able to
-             predict their vote before they make it. \n Currently, I am binding my datasets together
-             in order to create a comprehensive dataset with this information."  )),
+  titlePanel("Background"),
+  p("I used three different datasets in completing my analysis, each 
+   containing an independent study on a particular tell. The first 
+   one looks at emotional arousal in Justices. It is proven that the vocal 
+   pitch and tone of a Justice rises when they hear something displeasing 
+   in oral argument. By analyzing vocal pitch alone, one can accurately 
+   predict approximately 57.50% of a Justice’s vote on average, and correctly 
+   predict the outcomes of 66.55% overall cases. Next, another study focuses on 
+   the emotional importance of subconscious word choice used by Justices in 
+   oral argument. The use of “unpleasant” words towards one of the lawyers 
+   in question will likely indicate that the attorney will be the one 
+   representing the side of the case which will not be supported by the Justice 
+   in their final decision. Finally, the last study finds evidence that 
+   Justices are more prone to question the lawyer who they are more likely to 
+   disagree with in an oral argument than one who they are likely to eventually 
+   vote in agreement with."),
+  
+  p("All of these three tells are succesful in predicting the probability 
+   of how a Justice will vote on their own. Yet I believe that these three 
+   tells should be looked at together, not individually. I believe that more 
+   than one of the tells will be successfully observed in a given Justice's 
+   behavior. For example, if we have a case which shows Justice Scalia raising 
+   his pitch at a petitioner, questioning the petitioner more, and using 
+   language considered negative towards the petitoner, than we have a higher 
+   probability of predicting Scalia's vote during the oral argument stage alone. 
+   I believe that these tells do not show up indviidually, but instead in pairs 
+   or all three. If we find these tells in a Justice's interaction during the 
+   oral argument stage, we will be able to predict their vote before they make 
+   it.")),
 
 
   tabPanel(
-    "Data",
-    
-    
-    
-    # - UIs are built from "panel" functions, which specify areas of your page.
-    #
-    #   -- There is a "main panel," a "sidebar," a "title," etc.
-    
-    # Here is a sidebar!
-
-    sidebarPanel(
-      selectInput(
-        inputId = "justiceName",                 # a name for the value you choose here
-        label = "Choose a Justice",   # the name to display on the slider
-        choices = enos$justiceName                       # your list of choices to choose from
-      ),
-      
-      sliderInput(
-        inputId = "selected_size",                  # a name for the value you choose here
-        label = "Choose a number as a point size:", # the label to display above the slider
-        min = 0,                                    # the min, max, and initial values
-        max = 5,
-        value = 2 
-      )
-      
-    ),
-    
-    
-    # And here is your "main panel" for the page.
+    "Plots",
     
     mainPanel(
-      # - You can also make your UI more complicated with UI elements.
-      #
-      #   -- In general, these are defined by functions that you give arguments to 
-      #      (e.g. min and max values).
-      #
-      # - These include:
-      #
-      #   -- selectInput() to choose from multiple options.
-      #
-      #   -- sliderInput() lets you choose a value from a slider of values you define.
-      #
-      #   -- radioButtons() let you choose a button from a number of options
-      #
-      #   -- textInput() lets you enter whatever text you want.
-      #
-      #   -- Lots of other options, like entering a date. Look at the resources for 
-      #      other choices!
-      #
-      # - You then assign these inputs to a value and use those values in other places, 
-      #   like in plots!
-      #
-      # - All of these functions have their own arguments. For example:
-      
-      radioButtons(
-        inputId = "selected_color",             # a name for the value you choose here
-        label = "Choose a color!",              # the label to display above the buttons
-        choices = c("red", "blue", "green")     # the button values to choose from
-      ),
-      
-      textInput(
-        inputId = "entered_text",               # a name for the value you choose here
-        label = "Place your title text here:",  # a label above the text box
-        value = "Example Title"                 # an initial value for the box
-      ),
-      
-      # Not using this yet but I did not want to comment it out because I was 
-      # getting an error whenever I tried to do so.
-      
-      
-      textOutput("state_message"),              # load a text object called "state_message"
-      textOutput("size_message"),
-      textOutput("color_message"),
-      textOutput("text_message"),
+
       plotOutput("vocalpitch"),
-      plotOutput("questionR"),
-      plotOutput("questionP")
+      plotOutput("UnpWords"),
+      plotOutput("questions"),
+      
     )
   ),
+  
+  tabPanel(
+    "Models",
+    
+    mainPanel(
+      
+      plotOutput("model1")
+      
+    )
+  ),
+  
   tabPanel("About",
-             h3("This is an about me! My name is Daiana Lilo"),
-           p("I am a Government concentrator interested in the workings of 
-             the Supreme Court."),
+           titlePanel("About"),
+          h3("Overview"),
            p("
            I hope to study the following claim: Justices have been observed 
            to make three emotional and psychological “tells” during oral 
@@ -155,7 +86,41 @@ ui <- fluidPage(navbarPage(
            the Justice’s decision can be accurately made at the stage of oral 
            arguments. By combining the accuracies of each specific tell, one 
            will be able to calculate a higher probability of accuracy on how 
-           the Justice will vote in the case."))
+           the Justice will vote in the case."),
+          h3("Data"),
+          p("The datasets I used come from the following studies:
+            
+            - Dietrich, B. J., Enos, R. D., & Sen, M. (2018). 
+            Emotional Arousal Predicts Voting on the U.S.
+            
+            -  Black, R. C., Treul, S. A., Johnson, T. R., & Goldman, J. (2011). 
+            Emotions, Oral Arguments, and Supreme Court Decision Making. 
+            The Journal of Politics, 73(2), 572–581.
+            
+            -  Epstein, L., Landes, W. M., & Posner, R. A. (2009). 
+            Inferring the Winning Party in the Supreme Court from the Pattern 
+            of Questioning at Oral Argument. SSRN Electronic Journal."),
+          p("Check out my code", 
+            a("here",
+              href = "https://github.com/daililo/gov50-shiny")),
+          h3("About me"),
+          p("Hi! My name is Daiana Lilo and I am a Government concentrator 
+          interested in American politics and political research. Specifically,
+          I am really interested in the process of decision-making, whether it 
+          be by Supreme Court Justices or US policymakers. I hope to use my new
+          skills in R when working on my thesis in the future, which will also
+          be focused on decision-making and predictive modelling in American
+          politics."),
+          
+          p("When I'm not creating creating models in R, I am involved with
+            the Albanian Student Association on campus, the Small Claims 
+            Advisory Service, and the IOP. Check me out on my",
+            a("Linkedin",
+              href = "https://www.linkedin.com/in/daiana-lilo-b1a552187/"),
+            "to see some other cool stuff I've worked on!"),
+          
+          p("You can reach me @ dlilo@college.harvard.edu, especially if you're
+            working on decision-making or are a SCOTUS fanatic like me!"))
   ),
 
   
@@ -163,55 +128,92 @@ ui <- fluidPage(navbarPage(
 
 
 server <- function(input, output, session) {
-  # - Then, you use these named objects to update the data on your site via the input object.
-  #
-  #   -- render() functions are what show content that will change live on your site.
-  #
-  #   -- so here, renderText() is updating live text based on your choice.
-  
-  
-  
-  # Just like renderText(), we can renderPlot()!
+
   
   output$vocalpitch <- renderPlot({
-    # When I tried to make the tibble and use the max, min value functions 
-    # I kept getting errors, the CA in study hall said to just comment it out
-    # for Milestone 4 and figure out in the future how to do it?
-    # we need to use () here after the name of our dataset because it is reactive!
-  # enos %>%
-   #tibble(justice_name = c("AScalia", "AMKennedy", 
-                                        # "DHSouter", "RBGinsburg", 
-                                        # "JGRoberts"),
-                      #   min_val = -2:2,
-                      #   max_val = -2:2,
-                       #  med_val = -2:2
-      ggplot(enos, aes(x = justiceName, y = pitch_diff)) + 
-        geom_point() + 
-        # geom_errorbar will add a bar from ymin to ymax
-       # geom_errorbar(aes(ymin = min_val, ymax = max_val),
-             #         width = 0.4) + 
-        coord_flip() + theme_bw() + 
-        labs(title = "Justice Ranges in Pitch",
-             x = "Pitch Deviation",
-             y = "Justice") 
-     # Tried to use xlim(-2.5, 2.5), but was not working
+    all_cases %>%
+      ggplot(aes(x = pitch_diff, y = justiceName, fill = justiceName)) +
+      geom_density_ridges(bandwidth = .214) +
+      xlim(c(-2.5, 2.5)) +
+      scale_fill_viridis(option = "plasma", discrete = TRUE) +
+      geom_vline(xintercept = 0) +
+      theme_classic() +
+      theme(legend.position = "none") +
+      labs(title = "Range of a Justice's Pitch Difference When Questioning the
+Petitioner of a Case",
+           x = "Pitch Difference",
+           y = "Justice Name",
+           caption = "Source = enos_sen_justices.csv")
+
+    
   })
-  output$questionR <- renderPlot({
-      ggplot(epstein, aes(x = jquest_r, fill = UnanVote)) + 
-        geom_histogram(binwidth = 1, color = "white") + 
-      labs(title = "Respondent",
-           x = "Questions to Respondent",
-           y = "Count") 
+  
+  output$UnpWords <- renderPlot({
+      all_cases %>%
+      ggplot(aes(x = unpleasantDiff_totalWords, y = justiceName,
+                 fill = justiceName)) +
+      geom_density_ridges(bandwidth = .772) +
+      xlim(c(-5, 5)) +
+      scale_fill_viridis(option = "cividis", discrete = TRUE) +
+      geom_vline(xintercept = 0) +
+      theme_classic() +
+      theme(legend.position = "none") +
+      labs(title = "Connotation of Word Choice for Each Justice",
+           x = "Unpleasant Word Usage",
+           y = "Justice Name",
+           caption = "Source = black-johnson.csv") 
       
   })
   
-  output$questionP <- renderPlot({
-    ggplot(epstein, aes(x = jquest_p, fill = UnanVote)) + 
-      geom_histogram(binwidth = 1, color = "white") + 
-      labs(title = "Petitioner",
-           x = "Questions to Petitioner",
-           y = "Count") 
+  output$questions <- renderPlot({
+    all_cases %>%
+      select(justiceName, jquest_r, jquest_p) %>%
+      pivot_longer(cols = jquest_r:jquest_p, 
+                   names_to = "jquest",
+                   values_to = "Questions") %>%
+      ggplot(aes(x = Questions, y = justiceName, fill = jquest)) +
+      geom_density_ridges(bandwidth = 30, alpha = .5) +
+      facet_wrap(~ jquest) +
+      theme_classic() +
+      scale_fill_manual(values = c("red", "blue"),
+                         labels = c("Questions to Petioner", 
+                                    "Questions to Respondent"),
+                         name = "Questions") +
+      scale_x_continuous(labels = c("0", "10", "20", 
+                                    "30", "40", "50",
+                                    "60", "70", "80", "90",
+                                    "100"),
+                         breaks = seq(0, 100, 10),
+                         limits = c(0, 100)) +
+      labs(title = "Questions to the Petitioner vs. Respondent",
+           x = "Number of Questions",
+           y = "Justice Name",
+           caption = "Source = epstein.csv")
     
+  })
+    
+  output$model1 <- render_gt({
+    
+    set.seed(10)
+    
+    t_prior <- student_t(df = 7, location = 0, scale = 2.5)
+    
+    model_1 <- stan_glm(petitioner_vote ~ pitch_diff + 
+                        unpleasantDiff_totalWords + justiceName, 
+                        data = all_cases,
+                        family = binomial(link = "logit"), 
+                        prior = t_prior, prior_intercept = t_prior, QR=TRUE,
+                        refresh = 0) 
+      
+      tbl_regression(model_1, intercept = TRUE)  %>%
+      
+      as_gt() %>%
+      
+      tab_header(title = "Regression of Pitch Difference on Petioner Vote",
+                 subtitle = "Per Each Justice") %>%
+      
+      tab_source_note("Source: enos_sen_justices.csv")
+  
   })
   
 }

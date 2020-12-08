@@ -1,0 +1,204 @@
+---
+title: "Shiny Code"
+author: "Daiana Lilo"
+date: "12/1/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rstanarm)
+library(ggridges)
+library(patchwork)
+library(viridis)
+library(gtsummary)
+library(gt)
+```
+
+
+
+```{r}
+
+set.seed(10)
+
+t_prior <- student_t(df = 7, location = 0, scale = 2.5)
+
+model_1 <- stan_glm(petitioner_vote ~ pitch_diff + unpleasantDiff_totalWords + 
+                    justiceName, 
+                    data = all_cases,
+                    family = binomial(link = "logit"), 
+                    prior = t_prior, prior_intercept = t_prior, QR=TRUE,
+                    refresh = 0)
+
+model_1 %>%
+  
+  tbl_regression()  %>%
+  
+  as_gt() %>%
+  
+  tab_header(title = "Regression of Pitch Difference on Petioner Vote",
+             subtitle = "Per Each Justice") %>%
+  
+  tab_source_note("Source: enos_sen_justices.csv")
+
+
+```
+
+
+```{r}
+
+set.seed(10)
+
+t_prior2 <- student_t(df = 7, location = 0, scale = 2.5)
+
+model_2 <- stan_glm(petitioner_vote ~ unpleasantDiff_totalWords * justiceName, 
+                    data = all_cases,
+                    family = binomial(link = "logit"), 
+                    prior = t_prior2, prior_intercept = t_prior2, QR=TRUE,
+                    refresh = 0)
+
+model_2
+
+```
+
+
+
+
+
+```{r}
+
+# Plot One
+
+Pitch_Diff_Plot <- all_cases %>%
+  
+  ggplot(aes(x = pitch_diff, y = justiceName, fill = justiceName)) +
+  
+  # This plot is meant to look at the variance in a Justice's pitch, proving
+  # that it does indeed range significantly among all the Justices
+  
+  geom_density_ridges(bandwidth = .214) +
+  
+  xlim(c(-2.5, 2.5)) +
+  
+  scale_fill_viridis(option = "plasma", discrete = TRUE) +
+  
+  # Viridis might be my favorite color scheme in the entire world
+  
+  geom_vline(xintercept = 0) +
+  
+  # Added line at 0, which is the Justice's normal pitch, to look at how
+  # pitch differentiates from 0.
+  
+  theme_classic() +
+  
+  theme(legend.position = "none") +
+  
+  labs(title = "Range of a Justice's Pitch Difference When Questioning the
+Petitioner of a Case",
+       x = "Pitch Difference",
+       y = "Justice Name",
+       caption = "Source = enos_sen_justices.csv") 
+
+
+
+# Plot Two
+
+UnpleasantWords <- all_cases %>%
+  
+  ggplot(aes(x = unpleasantDiff_totalWords, y = justiceName,
+             fill = justiceName)) +
+  
+  # This graph will measure the variance of how a Justice uses unpleasant words
+  
+  # Similar to the graph above, shown that different connotation is used 
+  
+  geom_density_ridges(bandwidth = .772) +
+  
+  xlim(c(-5, 5)) +
+  
+  # The range of negativity in word choice.
+  
+  scale_fill_viridis(option = "cividis", discrete = TRUE) +
+  
+  geom_vline(xintercept = 0) +
+  
+  theme_classic() +
+  
+  theme(legend.position = "none") +
+  
+  labs(title = "Connotation of Word Choice for Each Justice",
+       x = "Unpleasant Word Usage",
+       y = "Justice Name",
+       caption = "Source = black-johnson.csv") 
+
+
+# Plot Three
+
+
+
+QuestionsPlot <- all_cases %>%
+  
+      select(justiceName, jquest_r, jquest_p) %>%
+  
+  # Only using these three columns, this data set needed more work than the 
+  # others
+  
+      pivot_longer(cols = jquest_r:jquest_p, 
+                   names_to = "jquest",
+                   values_to = "Questions") %>%
+  
+  # Used pivot_longer to make more rows instead of columns, wanting to combine
+  # a Justice's questions to the respondents and to the petitioners.
+  
+      ggplot(aes(x = Questions, y = justiceName, fill = jquest)) +
+  
+  # Here I look at how a Justice asks questions 
+  
+      geom_density_ridges(bandwidth = 30, alpha = .5) +
+  
+      facet_wrap(~ jquest) +
+  
+  # Unsure whether to keep facet_wrap, wanted to not have that much overlap in
+  # questions.
+  
+      theme_classic() +
+  
+      scale_fill_manual(values = c("red", "blue"),
+                         labels = c("Questions to Petioner", 
+                                    "Questions to Respondent"),
+                         name = "Questions") +
+  
+      scale_x_continuous(labels = c("0", "10", "20", 
+                                    "30", "40", "50",
+                                    "60", "70", "80", "90",
+                                    "100"),
+                         breaks = seq(0, 100, 10),
+                         limits = c(0, 100)) +
+  
+  # This helped me "zoom" in my data, wanted the x axis to go by 10s!
+  
+      labs(title = "Questions to the Petitioner vs. Respondent",
+           x = "Number of Questions",
+           y = "Justice Name",
+           caption = "Source = epstein.csv")
+
+
+
+
+
+
+
+
+Overlap <- Pitch_Diff_Plot + UnpleasantWords + QuestionsPlot
+
+# This code places my graphs side by side, still unsure if I want to go this 
+# route
+
+```
+
+
+
+
+
+
