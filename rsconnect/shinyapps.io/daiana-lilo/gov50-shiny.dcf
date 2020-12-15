@@ -5,8 +5,8 @@ account: daiana-lilo
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 3371090
-bundleId: 3959218
+bundleId: 3984409
 url: https://daiana-lilo.shinyapps.io/gov50-shiny/
-when: 1607416450.63757
+when: 1607898450.32666
 asMultiple: FALSE
 asStatic: FALSE

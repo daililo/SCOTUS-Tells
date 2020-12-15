@@ -44,11 +44,11 @@ ui <- fluidPage(theme = shinytheme("cosmo"), navbarPage(
    behavior. For example, if we have a case which shows Justice Scalia raising 
    his pitch at a petitioner, questioning the petitioner more, and using 
    language considered negative towards the petitoner, than we have a higher 
-   probability of predicting Scalia's vote during the oral argument stage alone. 
-   I believe that these tells do not show up indviidually, but instead in pairs 
-   or all three. If we find these tells in a Justice's interaction during the 
-   oral argument stage, we will be able to predict their vote before they make 
-   it.")),
+   probability of predicting Scalia's vote during the oral argument stage 
+   alone. I believe that these tells do not show up indviidually, but instead 
+   in pairs or all three. If we find these tells in a Justice's interaction 
+   during the oral argument stage, we will be able to predict their vote before 
+   they make it.")),
   
   # Discussion incorporated because I wanted to bring in previous written 
   # studies on my project in case the reader wanted more information.
@@ -170,7 +170,8 @@ ui <- fluidPage(theme = shinytheme("cosmo"), navbarPage(
             - Dietrich, B. J., Enos, R. D., & Sen, M. (2018). 
             Emotional Arousal Predicts Voting on the U.S.
             
-            -  Black, R. C., Treul, S. A., Johnson, T. R., & Goldman, J. (2011). 
+            -  Black, R. C., Treul, S. A., Johnson, T. R., & Goldman, J. 
+            (2011). 
             Emotions, Oral Arguments, and Supreme Court Decision Making. 
             The Journal of Politics, 73(2), 572–581.
             
@@ -212,6 +213,9 @@ server <- function(input, output, session) {
   
   # Interesting that I never liked using if else statements and am now
   # incorporating them into my final project.
+  
+  # These plots are the same as the one in my rmd, so code is included
+  # there instead.
   
   output$Plots <- renderPlot({
     if(input$tell_type == "Pitch") {
@@ -364,7 +368,8 @@ Petitioner of a Case",
         
         as_gt() %>%
         
-        tab_header(title = "Regression of Language Difference on Petioner Vote",
+        tab_header(title = "Regression of Language Difference on 
+                   Petioner Vote",
                    subtitle = "Per Each Justice") %>%
         
         tab_source_note("Source: black-johnson.csv") }
