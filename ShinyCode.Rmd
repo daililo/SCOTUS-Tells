@@ -14,6 +14,7 @@ library(patchwork)
 library(viridis)
 library(gtsummary)
 library(gt)
+library(broom.mixed)
 ```
 
 
@@ -55,9 +56,7 @@ model_1 %>%
   tab_source_note("Source: black-johnson.csv")
 
 
-#pplot <- plot(model_1, "areas", prob = 0.95, prob_outer = 1) +
- # xlim(c(-2.5, 2.5))
-#pplot + geom_vline(xintercept = 0)
+
 
 
 ```
@@ -100,18 +99,21 @@ model_2 %>%
 
 ```{r}
 
-
-# Still considering whether to incoporate this model.
-
 set.seed(10)
 
 t_prior3 <- student_t(df = 7, location = 0, scale = 2.5)
 
-model_3 <- stan_glm(petitioner_vote ~ jquest_p + justiceName - 1, 
+model_3 <- stan_glm(petitioner_vote ~ pitch_diff * unpleasantDiff_totalWords 
+                    + justiceName, 
                     data = all_cases,
                     family = binomial(link = "logit"), 
                     prior = t_prior3, prior_intercept = t_prior3, QR=TRUE,
                     refresh = 0)
+
+# This model looks at the interaction of pitch vote and unpleasant words to
+# see if these two together have a better predictive effect on petitioner vote.
+
+# Same model type as the previous models is used.
 
 model_3 %>%
   
@@ -119,10 +121,12 @@ model_3 %>%
   
   as_gt() %>%
   
-  tab_header(title = "Regression of Pitch Difference on Petioner Vote",
+  tab_header(title = "Interaction of Pitch and Language Difference on 
+             Petioner Vote",
              subtitle = "Per Each Justice") %>%
   
-  tab_source_note("Source: enos_sen_justices.csv")
+  tab_source_note("Sources: enos_sen_justices.csv &
+                  black-johnson.csv")
 
 ```
 
@@ -245,17 +249,6 @@ QuestionsPlot <- all_cases %>%
            y = "Justice Name",
            caption = "Source = epstein.csv")
 
-
-
-
-
-
-
-
-Overlap <- Pitch_Diff_Plot + UnpleasantWords + QuestionsPlot
-
-# This code places my graphs side by side, still unsure if I want to go this 
-# route
 
 ```
 

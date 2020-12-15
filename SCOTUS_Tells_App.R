@@ -48,11 +48,20 @@ ui <- fluidPage(theme = shinytheme("cosmo"), navbarPage(
    alone. I believe that these tells do not show up indviidually, but instead 
    in pairs or all three. If we find these tells in a Justice's interaction 
    during the oral argument stage, we will be able to predict their vote before 
-   they make it.")),
+   they make it."),
   
   # Discussion incorporated because I wanted to bring in previous written 
   # studies on my project in case the reader wanted more information.
+  
+  # Added images t
+  
+  img(src = "SCOTUS2020.jpg", height = 400, width = 600),
+  
+  img(src = "Court.jpg", height = 400, width = 600)),
 
+  # Added images to my opening page because I wanted my app to open by showing
+  # the Background section but also wanted it to be colorful and inviting
+  
 
   tabPanel(
     "Plots",
@@ -109,10 +118,12 @@ ui <- fluidPage(theme = shinytheme("cosmo"), navbarPage(
   tabPanel(
     "Models",
     
+    # These take time to load on the app, give them a second!
+    
     h3("Looking at Models"),
     sidebarPanel(
       selectInput("model_type","Model",
-                  c("Pitch", "Language")
+                  c("Pitch", "Language", "Interaction")
       ),
       
       # Similar to the plots, this lets a viewer choose one of the plots.
@@ -138,7 +149,28 @@ ui <- fluidPage(theme = shinytheme("cosmo"), navbarPage(
         words with negative connotations when voting for the petitioner. The 
         values of this model are very similar to the model depicting pitch
         difference, showing that Justices are likely to indicate both tells
-        when questioning during the oral argument stage.")),
+        when questioning during the oral argument stage."),
+      
+      br(),
+      
+      p("This model depicts the interaction between a Justice's pitch and
+        their use of unpleasant words. Due to both of these variables being
+        good indicators individually of how a Justice will vote in a case, it
+        is likely that together they are better predictors. The model shows
+        that when interacted, the tells are better able to predict a Justice's
+        vote. For example, Scalia had a value of -0.28 in the unpleasant
+        word category, and a value of -0.21 when looking at pitch (read
+        above for description on what the negative values mean). Yet, the 
+        interaction between the two has a lower negative value, -0.31, 
+        indicating that together they give a better probability of how Justice 
+        Scalia will vote on the case. This is apparent with the other Justices 
+        as well, proving that these tells together are good indicators of how a 
+        Justice will vote."),
+      
+      br(),
+      
+      p("The last tell requires further studying and testing before
+        being regressed with other variables.")),
     
     mainPanel(
       
@@ -214,8 +246,9 @@ server <- function(input, output, session) {
   # Interesting that I never liked using if else statements and am now
   # incorporating them into my final project.
   
-  # These plots are the same as the one in my rmd, so code is included
-  # there instead.
+  # These plots have been created in my rmd file and are exactly the same 
+  # from what I have there. Therefore, I put the comments pertaining to this
+  # code in the rmd file.
   
   output$Plots <- renderPlot({
     if(input$tell_type == "Pitch") {
@@ -321,7 +354,9 @@ Petitioner of a Case",
     
   })
   
-  # Similar to use and function of if else statements as above
+  # Similar to use and function of if else statements as above.
+  
+  # As before, comments for the code exist in the rmd file.
   
   output$model1 <- render_gt({
     
@@ -374,6 +409,32 @@ Petitioner of a Case",
         
         tab_source_note("Source: black-johnson.csv") }
     
+    
+    else if(input$model_type == "Interaction") {
+      
+      set.seed(10)
+      
+      t_prior3 <- student_t(df = 7, location = 0, scale = 2.5)
+      
+      model_3 <- stan_glm(petitioner_vote ~ pitch_diff * unpleasantDiff_totalWords 
+                          + justiceName, 
+                          data = all_cases,
+                          family = binomial(link = "logit"), 
+                          prior = t_prior3, prior_intercept = t_prior3, QR=TRUE,
+                          refresh = 0)
+      
+      model_3 %>%
+        
+        tbl_regression()  %>%
+        
+        as_gt() %>%
+        
+        tab_header(title = "Interaction of Pitch and Language Difference on 
+             Petioner Vote",
+                   subtitle = "Per Each Justice") %>%
+        
+        tab_source_note("Sources: enos_sen_justices.csv &
+                  black-johnson.csv") }
   
   })
   
